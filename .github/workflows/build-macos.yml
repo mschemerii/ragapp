@@ -1,0 +1,127 @@
+name: Build macOS Application
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e ".[all]"
+
+      - name: Build macOS Application
+        run: |
+          pyinstaller ragapp.spec
+
+      - name: Create DMG installer
+        run: |
+          # Install create-dmg
+          brew install create-dmg
+
+          # Create DMG
+          create-dmg \
+            --volname "RAG Application" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 450 185 \
+            "RAG-Application-macOS.dmg" \
+            "dist/RAG Application.app" \
+            || true  # Continue even if DMG creation has warnings
+
+      - name: Create ZIP archive (fallback)
+        run: |
+          cd dist
+          zip -r ../RAG-Application-macOS.zip "RAG Application.app"
+          cd ..
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAG-Application-macOS-DMG
+          path: RAG-Application-macOS.dmg
+          if-no-files-found: ignore
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAG-Application-macOS-ZIP
+          path: RAG-Application-macOS.zip
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            RAG-Application-macOS.dmg
+            RAG-Application-macOS.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos-cli:
+    name: Build macOS CLI
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e ".[all]"
+
+      - name: Build CLI executable
+        run: |
+          pyinstaller --onefile \
+            --name ragapp-cli \
+            --hidden-import ragapp \
+            --hidden-import ragapp.config \
+            --hidden-import ragapp.pipeline \
+            --collect-all langchain \
+            --collect-all langchain_community \
+            --collect-all langchain_openai \
+            --collect-all chromadb \
+            src/ragapp/__main__.py
+
+      - name: Create archive
+        run: |
+          cd dist
+          zip ragapp-cli-macOS.zip ragapp-cli
+          cd ..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragapp-cli-macOS
+          path: dist/ragapp-cli-macOS.zip
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/ragapp-cli-macOS.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
