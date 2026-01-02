@@ -34,8 +34,10 @@ class RAGPipeline:
         self.vector_store = VectorStore(
             store_path=self.settings.vector_store_path,
             collection_name=self.settings.collection_name,
+            embedding_provider=self.settings.embedding_provider,
             embedding_model=self.settings.embedding_model,
             openai_api_key=self.settings.openai_api_key,
+            ollama_base_url=self.settings.ollama_base_url,
         )
         self.retriever = DocumentRetriever(
             vector_store=self.vector_store,
@@ -43,10 +45,16 @@ class RAGPipeline:
             similarity_threshold=self.settings.similarity_threshold,
         )
         self.generator = ResponseGenerator(
-            model=self.settings.openai_model,
+            provider=self.settings.llm_provider,
+            model=(
+                self.settings.ollama_model
+                if self.settings.llm_provider == "ollama"
+                else self.settings.openai_model
+            ),
             temperature=self.settings.temperature,
             max_tokens=self.settings.max_tokens,
             openai_api_key=self.settings.openai_api_key,
+            ollama_base_url=self.settings.ollama_base_url,
         )
 
         logger.info("RAG Pipeline initialized")
