@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document Q&A</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .query-section, .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            color: #555;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .answer-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .answer-section.active {
+            display: block;
+        }
+
+        .answer-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .answer-text {
+            color: #555;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .sources-section {
+            margin-top: 20px;
+        }
+
+        .source-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .source-card h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .source-card .source-meta {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .source-card .source-content {
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stats-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 4px;
+            color: #c62828;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 RAG Document Q&A</h1>
+            <p>Ask questions about your documents using Retrieval-Augmented Generation</p>
+        </div>
+
+        <div class="main-content">
+            <div class="query-section">
+                <h2 class="section-title">Ask a Question</h2>
+
+                <div class="input-group">
+                    <label for="question">Your Question</label>
+                    <input
+                        type="text"
+                        id="question"
+                        placeholder="What is this document about?"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showSources" checked>
+                    <label for="showSources">Show source documents</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="streaming">
+                    <label for="streaming">Stream response</label>
+                </div>
+
+                <button class="btn btn-primary" onclick="submitQuery()" id="submitBtn">
+                    🔍 Search
+                </button>
+
+                <button class="btn btn-secondary" onclick="clearResults()">
+                    🗑️ Clear
+                </button>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <div class="answer-section" id="answerSection">
+                    <h3>Answer</h3>
+                    <div class="answer-text" id="answerText"></div>
+
+                    <div class="sources-section" id="sourcesSection"></div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="stats-card">
+                    <h3>System Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Documents</span>
+                        <span class="stat-value" id="docCount">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Source Files</span>
+                        <span class="stat-value" id="fileCount">-</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>💡 Example Questions</h4>
+                    <p>
+                        • What are the main topics covered?<br>
+                        • Can you summarize the key points?<br>
+                        • What is RAG and how does it work?<br>
+                        • What are the technical details?
+                    </p>
+                </div>
+
+                <div class="info-box" style="margin-top: 20px;">
+                    <h4>ℹ️ About</h4>
+                    <p>
+                        This application uses LangChain, ChromaDB, and OpenAI to provide
+                        intelligent document search and Q&A capabilities.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API base URL
+        const API_BASE = window.location.origin;
+
+        // Load stats on page load
+        window.addEventListener('DOMContentLoaded', loadStats);
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+
+                document.getElementById('docCount').textContent = data.documents_in_store;
+                document.getElementById('fileCount').textContent = data.source_files;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                submitQuery();
+            }
+        }
+
+        async function submitQuery() {
+            const question = document.getElementById('question').value.trim();
+            const showSources = document.getElementById('showSources').checked;
+            const streaming = document.getElementById('streaming').checked;
+            const submitBtn = document.getElementById('submitBtn');
+            const answerSection = document.getElementById('answerSection');
+            const answerText = document.getElementById('answerText');
+            const sourcesSection = document.getElementById('sourcesSection');
+            const errorMessage = document.getElementById('errorMessage');
+
+            if (!question) {
+                showError('Please enter a question');
+                return;
+            }
+
+            // Reset UI
+            errorMessage.classList.remove('active');
+            answerSection.classList.add('active');
+            sourcesSection.innerHTML = '';
+
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Searching...';
+
+            try {
+                if (streaming) {
+                    await handleStreamingQuery(question);
+                } else {
+                    await handleRegularQuery(question, showSources);
+                }
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                answerSection.classList.remove('active');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🔍 Search';
+            }
+        }
+
+        async function handleRegularQuery(question, showSources) {
+            const response = await fetch(`${API_BASE}/query`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    return_sources: showSources,
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Query failed');
+            }
+
+            const data = await response.json();
+
+            // Display answer
+            document.getElementById('answerText').textContent = data.answer;
+
+            // Display sources
+            if (showSources && data.sources) {
+                displaySources(data.sources);
+            }
+        }
+
+        async function handleStreamingQuery(question) {
+            const response = await fetch(`${API_BASE}/query/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    return_sources: false,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Streaming query failed');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let answer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                answer += chunk;
+                document.getElementById('answerText').textContent = answer;
+            }
+        }
+
+        function displaySources(sources) {
+            const sourcesSection = document.getElementById('sourcesSection');
+
+            if (sources.length === 0) {
+                return;
+            }
+
+            const title = document.createElement('h3');
+            title.textContent = `📄 Source Documents (${sources.length})`;
+            title.style.marginTop = '20px';
+            title.style.marginBottom = '15px';
+            sourcesSection.appendChild(title);
+
+            sources.forEach((source, index) => {
+                const card = document.createElement('div');
+                card.className = 'source-card';
+
+                const fileName = source.source.split('/').pop();
+
+                card.innerHTML = `
+                    <h4>Source ${index + 1}: ${fileName}</h4>
+                    <div class="source-meta">
+                        File: ${source.source}
+                        ${source.chunk_id !== null ? ` | Chunk ID: ${source.chunk_id}` : ''}
+                    </div>
+                    <div class="source-content">${source.content}</div>
+                `;
+
+                sourcesSection.appendChild(card);
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('question').value = '';
+            document.getElementById('answerSection').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+        }
+    </script>
+</body>
+</html>

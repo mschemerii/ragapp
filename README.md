@@ -9,12 +9,12 @@ This application combines document retrieval with large language models to provi
 ## Features
 
 - **Multi-format Support**: PDF, TXT, DOCX, Markdown
+- **Multiple Interfaces**: CLI, Streamlit Web UI, FastAPI REST API
 - **Semantic Search**: Vector-based similarity search using ChromaDB
 - **Configurable Chunking**: Customizable chunk sizes and overlap
 - **Streaming Responses**: Real-time answer generation
-- **CLI & API**: Both command-line and programmatic interfaces
 - **Source Attribution**: Track which documents answers come from
-- **Interactive Mode**: Conversational query interface
+- **Interactive Mode**: Conversational query interface (CLI & Web)
 - **Type-Safe**: Full type hints with mypy checking
 - **Well-Tested**: Comprehensive test suite with pytest
 - **CI/CD Ready**: GitHub Actions workflows included
@@ -43,8 +43,17 @@ uv sync
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Install core dependencies
 pip install -e .
+
+# Install with web UI support (Streamlit + FastAPI)
+pip install -e ".[web]"
+
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Install everything
+pip install -e ".[all]"
 ```
 
 ## Configuration
@@ -71,10 +80,87 @@ DOCUMENTS_PATH=./data/documents
    python -m ragapp ingest --reset
    ```
 
-3. **Query your documents**:
+3. **Choose your interface**:
+
+   **CLI (Command Line)**:
    ```bash
    python -m ragapp query "What is RAG?"
    ```
+
+   **Streamlit Web UI**:
+   ```bash
+   pip install -e ".[web]"
+   streamlit run streamlit_app.py
+   # Opens browser at http://localhost:8501
+   ```
+
+   **FastAPI + Web Frontend**:
+   ```bash
+   pip install -e ".[web]"
+   uvicorn api:app --reload
+   # Opens browser at http://localhost:8000
+   ```
+
+## User Interfaces
+
+This application provides **three different interfaces** to suit your needs:
+
+### 1. Command-Line Interface (CLI)
+
+The simplest way to use the application from the terminal.
+
+**Best for**: Scripts, automation, quick queries
+
+### 2. Streamlit Web UI
+
+A beautiful, interactive web interface built with Streamlit.
+
+**Best for**: Internal tools, data science teams, quick demos
+
+**Run it:**
+```bash
+pip install -e ".[web]"
+streamlit run streamlit_app.py
+```
+
+Then open http://localhost:8501 in your browser.
+
+**Features**:
+- Interactive query interface
+- Real-time statistics display
+- Source document viewer
+- Streaming response support
+- Clean, modern UI
+
+### 3. FastAPI REST API + Web Frontend
+
+A production-ready REST API with a responsive web frontend.
+
+**Best for**: Production deployments, integration with other services, custom frontends
+
+**Run it:**
+```bash
+pip install -e ".[web]"
+uvicorn api:app --reload
+```
+
+Then open http://localhost:8000 in your browser.
+
+**Features**:
+- RESTful API with OpenAPI documentation
+- Interactive web interface at `/`
+- API docs at `/docs`
+- Streaming support
+- CORS enabled for external integrations
+- Background task support
+
+**API Endpoints**:
+- `POST /query` - Query the RAG system
+- `POST /query/stream` - Stream query response
+- `GET /stats` - Get system statistics
+- `POST /ingest` - Ingest documents
+- `DELETE /vector-store` - Reset vector store
+- `GET /health` - Health check
 
 ## Usage
 
