@@ -1,13 +1,15 @@
 """Response generation using LLMs."""
 
 import logging
-from typing import List, Optional
+from typing import Literal
 
+from langchain_community.llms import Ollama
 from langchain_core.documents import Document
+from langchain_core.language_models import BaseLLM
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 
-from ragapp.generation.prompts import RAG_CHAT_PROMPT, CONVERSATIONAL_RAG_PROMPT
+from ragapp.generation.prompts import CONVERSATIONAL_RAG_PROMPT, RAG_CHAT_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -17,37 +19,61 @@ class ResponseGenerator:
 
     def __init__(
         self,
-        model: str = "gpt-4-turbo-preview",
+        provider: Literal["openai", "ollama"] = "ollama",
+        model: str | None = None,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = 1000,
-        openai_api_key: Optional[str] = None,
+        max_tokens: int | None = 1000,
+        openai_api_key: str | None = None,
+        ollama_base_url: str = "http://localhost:11434",
     ) -> None:
         """Initialize the response generator.
 
         Args:
-            model: OpenAI model name
+            provider: LLM provider ("openai" or "ollama")
+            model: Model name (provider-specific)
             temperature: Temperature for generation
             max_tokens: Maximum tokens to generate
-            openai_api_key: OpenAI API key
+            openai_api_key: OpenAI API key (required for OpenAI)
+            ollama_base_url: Ollama server URL (for Ollama)
         """
-        self.model = model
+        self.provider = provider
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-        self.llm = ChatOpenAI(
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            openai_api_key=openai_api_key,
-        )
+        # Initialize the appropriate LLM
+        if provider == "openai":
+            if not model:
+                model = "gpt-4-turbo-preview"
+            self.llm: BaseLLM = ChatOpenAI(
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                openai_api_key=openai_api_key,
+            )
+            logger.info(f"Initialized OpenAI generator with model: {model}")
 
-        logger.info(f"Initialized generator with model: {model}")
+        elif provider == "ollama":
+            if not model:
+                model = "llama3.2"
+            self.llm = Ollama(
+                model=model,
+                temperature=temperature,
+                base_url=ollama_base_url,
+            )
+            logger.info(
+                f"Initialized Ollama generator with model: {model} at {ollama_base_url}"
+            )
+
+        else:
+            raise ValueError(f"Unsupported provider: {provider}")
+
+        self.model = model
 
     def generate(
         self,
         question: str,
         context: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ) -> str:
         """Generate a response based on context.
 
@@ -60,27 +86,38 @@ class ResponseGenerator:
             Generated response
         """
         try:
-            if chat_history:
-                # Use conversational prompt with history
-                prompt = CONVERSATIONAL_RAG_PROMPT
-                response = self.llm.invoke(
-                    prompt.format_messages(
-                        context=context,
-                        question=question,
-                        chat_history=chat_history,
+            if self.provider == "openai":
+                # Use chat prompt for OpenAI
+                if chat_history:
+                    prompt = CONVERSATIONAL_RAG_PROMPT
+                    response = self.llm.invoke(
+                        prompt.format_messages(
+                            context=context,
+                            question=question,
+                            chat_history=chat_history,
+                        )
                     )
-                )
-            else:
-                # Use standard RAG prompt
-                prompt = RAG_CHAT_PROMPT
-                response = self.llm.invoke(
-                    prompt.format_messages(
-                        context=context,
-                        question=question,
+                else:
+                    prompt = RAG_CHAT_PROMPT
+                    response = self.llm.invoke(
+                        prompt.format_messages(
+                            context=context,
+                            question=question,
+                        )
                     )
-                )
+                answer = response.content
 
-            answer = response.content
+            else:  # Ollama
+                # Format prompt as plain text for Ollama
+                prompt_text = f"""Context information:
+{context}
+
+Question: {question}
+
+Based on the context above, please provide a detailed answer to the question. If the context doesn't contain the information needed to answer the question, please say so."""
+
+                answer = self.llm.invoke(prompt_text)
+
             logger.info(f"Generated response of length: {len(str(answer))}")
             return str(answer)
 
@@ -91,8 +128,8 @@ class ResponseGenerator:
     def generate_from_documents(
         self,
         question: str,
-        documents: List[Document],
-        chat_history: Optional[List[BaseMessage]] = None,
+        documents: list[Document],
+        chat_history: list[BaseMessage] | None = None,
     ) -> str:
         """Generate a response from retrieved documents.
 
@@ -109,7 +146,7 @@ class ResponseGenerator:
 
         return self.generate(question, context, chat_history)
 
-    def _format_documents(self, documents: List[Document]) -> str:
+    def _format_documents(self, documents: list[Document]) -> str:
         """Format documents into a context string.
 
         Args:
@@ -125,9 +162,7 @@ class ResponseGenerator:
         for idx, doc in enumerate(documents, 1):
             source = doc.metadata.get("source", "Unknown")
             content = doc.page_content.strip()
-            context_parts.append(
-                f"--- Document {idx} (Source: {source}) ---\n{content}"
-            )
+            context_parts.append(f"--- Document {idx} (Source: {source}) ---\n{content}")
 
         return "\n\n".join(context_parts)
 
@@ -135,7 +170,7 @@ class ResponseGenerator:
         self,
         question: str,
         context: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ):
         """Stream generate a response (generator function).
 
@@ -148,23 +183,37 @@ class ResponseGenerator:
             Chunks of the generated response
         """
         try:
-            if chat_history:
-                prompt = CONVERSATIONAL_RAG_PROMPT
-                messages = prompt.format_messages(
-                    context=context,
-                    question=question,
-                    chat_history=chat_history,
-                )
-            else:
-                prompt = RAG_CHAT_PROMPT
-                messages = prompt.format_messages(
-                    context=context,
-                    question=question,
-                )
+            if self.provider == "openai":
+                # Use chat prompt for OpenAI
+                if chat_history:
+                    prompt = CONVERSATIONAL_RAG_PROMPT
+                    messages = prompt.format_messages(
+                        context=context,
+                        question=question,
+                        chat_history=chat_history,
+                    )
+                else:
+                    prompt = RAG_CHAT_PROMPT
+                    messages = prompt.format_messages(
+                        context=context,
+                        question=question,
+                    )
 
-            for chunk in self.llm.stream(messages):
-                if chunk.content:
-                    yield chunk.content
+                for chunk in self.llm.stream(messages):
+                    if chunk.content:
+                        yield chunk.content
+
+            else:  # Ollama
+                # Format prompt as plain text for Ollama
+                prompt_text = f"""Context information:
+{context}
+
+Question: {question}
+
+Based on the context above, please provide a detailed answer to the question. If the context doesn't contain the information needed to answer the question, please say so."""
+
+                for chunk in self.llm.stream(prompt_text):
+                    yield chunk
 
         except Exception as e:
             logger.error(f"Error streaming response: {e}")

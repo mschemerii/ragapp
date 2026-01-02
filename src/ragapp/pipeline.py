@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RAGPipeline:
     """Complete RAG pipeline for document ingestion, retrieval, and generation."""
 
-    def __init__(self, settings: Optional[Settings] = None) -> None:
+    def __init__(self, settings: Settings | None = None) -> None:
         """Initialize the RAG pipeline.
 
         Args:
@@ -35,8 +34,10 @@ class RAGPipeline:
         self.vector_store = VectorStore(
             store_path=self.settings.vector_store_path,
             collection_name=self.settings.collection_name,
+            embedding_provider=self.settings.embedding_provider,
             embedding_model=self.settings.embedding_model,
             openai_api_key=self.settings.openai_api_key,
+            ollama_base_url=self.settings.ollama_base_url,
         )
         self.retriever = DocumentRetriever(
             vector_store=self.vector_store,
@@ -44,17 +45,23 @@ class RAGPipeline:
             similarity_threshold=self.settings.similarity_threshold,
         )
         self.generator = ResponseGenerator(
-            model=self.settings.openai_model,
+            provider=self.settings.llm_provider,
+            model=(
+                self.settings.ollama_model
+                if self.settings.llm_provider == "ollama"
+                else self.settings.openai_model
+            ),
             temperature=self.settings.temperature,
             max_tokens=self.settings.max_tokens,
             openai_api_key=self.settings.openai_api_key,
+            ollama_base_url=self.settings.ollama_base_url,
         )
 
         logger.info("RAG Pipeline initialized")
 
     def ingest_documents(
         self,
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
         reset: bool = False,
     ) -> int:
         """Ingest documents into the vector store.
@@ -97,9 +104,9 @@ class RAGPipeline:
     def query(
         self,
         question: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
         return_sources: bool = False,
-    ) -> str | tuple[str, List[Document]]:
+    ) -> str | tuple[str, list[Document]]:
         """Query the RAG system.
 
         Args:
@@ -133,7 +140,7 @@ class RAGPipeline:
     def stream_query(
         self,
         question: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ):
         """Stream query response.
 
@@ -157,12 +164,11 @@ class RAGPipeline:
         context = self.retriever.format_context(documents)
 
         # Stream response
-        for chunk in self.generator.stream_generate(
+        yield from self.generator.stream_generate(
             question=question,
             context=context,
             chat_history=chat_history,
-        ):
-            yield chunk
+        )
 
     def get_stats(self) -> dict[str, int]:
         """Get statistics about the RAG system.

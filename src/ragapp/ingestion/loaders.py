@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List
 
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -34,7 +33,7 @@ class DocumentLoader:
         """
         self.documents_path = documents_path
 
-    def load_document(self, file_path: Path) -> List[Document]:
+    def load_document(self, file_path: Path) -> list[Document]:
         """Load a single document.
 
         Args:
@@ -65,16 +64,13 @@ class DocumentLoader:
             logger.error(f"Error loading {file_path}: {e}")
             raise
 
-    def load_directory(self, glob_pattern: str = "**/*") -> List[Document]:
+    def load_directory(self) -> list[Document]:
         """Load all supported documents from a directory.
-
-        Args:
-            glob_pattern: Glob pattern to match files
 
         Returns:
             List of all loaded documents
         """
-        all_documents: List[Document] = []
+        all_documents: list[Document] = []
 
         for extension, loader_class in self.SUPPORTED_EXTENSIONS.items():
             try:
@@ -88,9 +84,7 @@ class DocumentLoader:
                 )
                 documents = loader.load()
                 all_documents.extend(documents)
-                logger.info(
-                    f"Loaded {len(documents)} documents with extension {extension}"
-                )
+                logger.info(f"Loaded {len(documents)} documents with extension {extension}")
             except Exception as e:
                 logger.warning(f"Error loading {extension} files: {e}")
                 continue

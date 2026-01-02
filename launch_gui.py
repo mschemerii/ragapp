@@ -5,8 +5,8 @@ Launcher script for RAG Application GUI.
 This script launches the Streamlit web interface.
 """
 
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 

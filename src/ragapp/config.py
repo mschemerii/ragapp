@@ -1,7 +1,7 @@
 """Configuration management for the RAG application."""
 
 from pathlib import Path
-from typing import Optional
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,17 +17,40 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # OpenAI Configuration
-    openai_api_key: str = Field(..., description="OpenAI API key")
+    # LLM Provider Configuration
+    llm_provider: Literal["openai", "ollama"] = Field(
+        default="ollama",
+        description="LLM provider to use (openai or ollama)",
+    )
+
+    # OpenAI Configuration (when llm_provider="openai")
+    openai_api_key: str | None = Field(
+        default=None,
+        description="OpenAI API key (required if llm_provider=openai)",
+    )
     openai_model: str = Field(
         default="gpt-4-turbo-preview",
         description="OpenAI model to use for generation",
     )
 
+    # Ollama Configuration (when llm_provider="ollama")
+    ollama_base_url: str = Field(
+        default="http://localhost:11434",
+        description="Ollama server URL",
+    )
+    ollama_model: str = Field(
+        default="llama3.2",
+        description="Ollama model to use for generation",
+    )
+
     # Embedding Configuration
+    embedding_provider: Literal["openai", "ollama"] = Field(
+        default="ollama",
+        description="Embedding provider to use (openai or ollama)",
+    )
     embedding_model: str = Field(
-        default="text-embedding-3-small",
-        description="OpenAI embedding model",
+        default="nomic-embed-text",
+        description="Embedding model name",
     )
 
     # Vector Store Configuration
@@ -83,7 +106,7 @@ class Settings(BaseSettings):
         ge=0.0,
         le=2.0,
     )
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         default=1000,
         description="Maximum tokens for generation",
         ge=1,
@@ -94,6 +117,10 @@ class Settings(BaseSettings):
         super().__init__(**kwargs)
         self.vector_store_path.mkdir(parents=True, exist_ok=True)
         self.documents_path.mkdir(parents=True, exist_ok=True)
+
+        # Validate provider-specific requirements
+        if self.llm_provider == "openai" and not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
 
 
 def get_settings() -> Settings:

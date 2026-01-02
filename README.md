@@ -9,6 +9,7 @@ This application combines document retrieval with large language models to provi
 ## Features
 
 - **Multi-format Support**: PDF, TXT, DOCX, Markdown
+- **Multiple LLM Providers**: OpenAI or Local Ollama models (M4 Max optimized)
 - **Multiple Interfaces**: CLI, Streamlit Web UI, FastAPI REST API
 - **Semantic Search**: Vector-based similarity search using ChromaDB
 - **Configurable Chunking**: Customizable chunk sizes and overlap
@@ -88,9 +89,38 @@ pip install -e ".[all]"
 
 Create a `.env` file in the project root with your configuration:
 
+### Using Local Ollama (Default, Recommended for M4 Max)
+
 ```env
-# OpenAI API Key (or other LLM provider)
+# LLM Provider Configuration
+LLM_PROVIDER=ollama
+EMBEDDING_PROVIDER=ollama
+
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+EMBEDDING_MODEL=nomic-embed-text
+
+# Vector Store Configuration
+VECTOR_STORE_PATH=./data/vectorstore
+
+# Document Storage
+DOCUMENTS_PATH=./data/documents
+```
+
+**Note**: You need to have [Ollama](https://ollama.ai) installed and running. See the [Ollama Setup Guide](docs/OLLAMA_SETUP.md) for details.
+
+### Using OpenAI
+
+```env
+# LLM Provider Configuration
+LLM_PROVIDER=openai
+EMBEDDING_PROVIDER=openai
+
+# OpenAI API Key
 OPENAI_API_KEY=your-api-key-here
+OPENAI_MODEL=gpt-4-turbo-preview
+EMBEDDING_MODEL=text-embedding-3-small
 
 # Vector Store Configuration
 VECTOR_STORE_PATH=./data/vectorstore
@@ -270,8 +300,8 @@ This RAG application follows a modular architecture:
       │                     │                     │
       ▼                     ▼                     ▼
 ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│  Documents  │      │   Vector    │      │   OpenAI    │
-│   Loaders   │      │    Store    │      │     LLM     │
+│  Documents  │      │   Vector    │      │  Ollama or  │
+│   Loaders   │      │    Store    │      │   OpenAI    │
 └─────────────┘      └─────────────┘      └─────────────┘
 ```
 
@@ -332,4 +362,5 @@ MIT License - see LICENSE file for details
 Built with:
 - [LangChain](https://python.langchain.com/) - LLM framework
 - [ChromaDB](https://www.trychroma.com/) - Vector database
-- [OpenAI](https://openai.com/) - Language models
+- [Ollama](https://ollama.ai/) - Local language models (default)
+- [OpenAI](https://openai.com/) - Cloud language models (optional)

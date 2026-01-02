@@ -2,8 +2,9 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Literal
 
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -19,28 +20,51 @@ class VectorStore:
         self,
         store_path: Path,
         collection_name: str,
-        embedding_model: str = "text-embedding-3-small",
-        openai_api_key: Optional[str] = None,
+        embedding_provider: Literal["openai", "ollama"] = "ollama",
+        embedding_model: str | None = None,
+        openai_api_key: str | None = None,
+        ollama_base_url: str = "http://localhost:11434",
     ) -> None:
         """Initialize the vector store.
 
         Args:
             store_path: Path to store vector database
             collection_name: Name of the ChromaDB collection
-            embedding_model: OpenAI embedding model name
-            openai_api_key: OpenAI API key
+            embedding_provider: Provider for embeddings ("openai" or "ollama")
+            embedding_model: Embedding model name
+            openai_api_key: OpenAI API key (for OpenAI embeddings)
+            ollama_base_url: Ollama server URL (for Ollama embeddings)
         """
         self.store_path = store_path
         self.collection_name = collection_name
+        self.embedding_provider = embedding_provider
 
-        # Initialize embeddings
-        self.embeddings: Embeddings = OpenAIEmbeddings(
-            model=embedding_model,
-            openai_api_key=openai_api_key,
-        )
+        # Initialize embeddings based on provider
+        if embedding_provider == "openai":
+            if not embedding_model:
+                embedding_model = "text-embedding-3-small"
+            self.embeddings: Embeddings = OpenAIEmbeddings(
+                model=embedding_model,
+                openai_api_key=openai_api_key,
+            )
+            logger.info(f"Using OpenAI embeddings: {embedding_model}")
+
+        elif embedding_provider == "ollama":
+            if not embedding_model:
+                embedding_model = "nomic-embed-text"
+            self.embeddings = OllamaEmbeddings(
+                model=embedding_model,
+                base_url=ollama_base_url,
+            )
+            logger.info(
+                f"Using Ollama embeddings: {embedding_model} at {ollama_base_url}"
+            )
+
+        else:
+            raise ValueError(f"Unsupported embedding provider: {embedding_provider}")
 
         # Initialize or load vector store
-        self.vector_store: Optional[Chroma] = None
+        self.vector_store: Chroma | None = None
 
     def create_or_load(self) -> Chroma:
         """Create a new vector store or load existing one.
@@ -63,7 +87,7 @@ class VectorStore:
 
     def add_documents(
         self,
-        documents: List[Document],
+        documents: list[Document],
         batch_size: int = 100,
     ) -> None:
         """Add documents to the vector store.
@@ -95,8 +119,8 @@ class VectorStore:
         self,
         query: str,
         k: int = 5,
-        score_threshold: Optional[float] = None,
-    ) -> List[Document]:
+        score_threshold: float | None = None,
+    ) -> list[Document]:
         """Search for similar documents.
 
         Args:
