@@ -1,7 +1,6 @@
 """Document processing and chunking utilities."""
 
 import logging
-from typing import List
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
@@ -28,7 +27,7 @@ class DocumentProcessor:
             separators=["\n\n", "\n", ". ", " ", ""],
         )
 
-    def process_documents(self, documents: List[Document]) -> List[Document]:
+    def process_documents(self, documents: list[Document]) -> list[Document]:
         """Process and chunk documents.
 
         Args:
@@ -50,12 +49,10 @@ class DocumentProcessor:
         # Add metadata
         processed_docs = self._add_chunk_metadata(chunked_docs)
 
-        logger.info(
-            f"Processed {len(documents)} documents into {len(processed_docs)} chunks"
-        )
+        logger.info(f"Processed {len(documents)} documents into {len(processed_docs)} chunks")
         return processed_docs
 
-    def _clean_documents(self, documents: List[Document]) -> List[Document]:
+    def _clean_documents(self, documents: list[Document]) -> list[Document]:
         """Clean document content.
 
         Args:
@@ -79,7 +76,7 @@ class DocumentProcessor:
 
         return cleaned
 
-    def _add_chunk_metadata(self, documents: List[Document]) -> List[Document]:
+    def _add_chunk_metadata(self, documents: list[Document]) -> list[Document]:
         """Add chunk-specific metadata to documents.
 
         Args:

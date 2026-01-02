@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RAGPipeline:
     """Complete RAG pipeline for document ingestion, retrieval, and generation."""
 
-    def __init__(self, settings: Optional[Settings] = None) -> None:
+    def __init__(self, settings: Settings | None = None) -> None:
         """Initialize the RAG pipeline.
 
         Args:
@@ -54,7 +53,7 @@ class RAGPipeline:
 
     def ingest_documents(
         self,
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
         reset: bool = False,
     ) -> int:
         """Ingest documents into the vector store.
@@ -97,9 +96,9 @@ class RAGPipeline:
     def query(
         self,
         question: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
         return_sources: bool = False,
-    ) -> str | tuple[str, List[Document]]:
+    ) -> str | tuple[str, list[Document]]:
         """Query the RAG system.
 
         Args:
@@ -133,7 +132,7 @@ class RAGPipeline:
     def stream_query(
         self,
         question: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ):
         """Stream query response.
 
@@ -157,12 +156,11 @@ class RAGPipeline:
         context = self.retriever.format_context(documents)
 
         # Stream response
-        for chunk in self.generator.stream_generate(
+        yield from self.generator.stream_generate(
             question=question,
             context=context,
             chat_history=chat_history,
-        ):
-            yield chunk
+        )
 
     def get_stats(self) -> dict[str, int]:
         """Get statistics about the RAG system.

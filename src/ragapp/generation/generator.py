@@ -1,13 +1,12 @@
 """Response generation using LLMs."""
 
 import logging
-from typing import List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 
-from ragapp.generation.prompts import RAG_CHAT_PROMPT, CONVERSATIONAL_RAG_PROMPT
+from ragapp.generation.prompts import CONVERSATIONAL_RAG_PROMPT, RAG_CHAT_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +18,8 @@ class ResponseGenerator:
         self,
         model: str = "gpt-4-turbo-preview",
         temperature: float = 0.7,
-        max_tokens: Optional[int] = 1000,
-        openai_api_key: Optional[str] = None,
+        max_tokens: int | None = 1000,
+        openai_api_key: str | None = None,
     ) -> None:
         """Initialize the response generator.
 
@@ -47,7 +46,7 @@ class ResponseGenerator:
         self,
         question: str,
         context: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ) -> str:
         """Generate a response based on context.
 
@@ -91,8 +90,8 @@ class ResponseGenerator:
     def generate_from_documents(
         self,
         question: str,
-        documents: List[Document],
-        chat_history: Optional[List[BaseMessage]] = None,
+        documents: list[Document],
+        chat_history: list[BaseMessage] | None = None,
     ) -> str:
         """Generate a response from retrieved documents.
 
@@ -109,7 +108,7 @@ class ResponseGenerator:
 
         return self.generate(question, context, chat_history)
 
-    def _format_documents(self, documents: List[Document]) -> str:
+    def _format_documents(self, documents: list[Document]) -> str:
         """Format documents into a context string.
 
         Args:
@@ -125,9 +124,7 @@ class ResponseGenerator:
         for idx, doc in enumerate(documents, 1):
             source = doc.metadata.get("source", "Unknown")
             content = doc.page_content.strip()
-            context_parts.append(
-                f"--- Document {idx} (Source: {source}) ---\n{content}"
-            )
+            context_parts.append(f"--- Document {idx} (Source: {source}) ---\n{content}")
 
         return "\n\n".join(context_parts)
 
@@ -135,7 +132,7 @@ class ResponseGenerator:
         self,
         question: str,
         context: str,
-        chat_history: Optional[List[BaseMessage]] = None,
+        chat_history: list[BaseMessage] | None = None,
     ):
         """Stream generate a response (generator function).
 

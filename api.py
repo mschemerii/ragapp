@@ -5,11 +5,10 @@ Run with: uvicorn api:app --reload
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -71,15 +70,15 @@ class SourceDocument(BaseModel):
 
     source: str = Field(..., description="Source file path")
     content: str = Field(..., description="Document content")
-    chunk_id: Optional[int] = Field(None, description="Chunk ID")
-    chunk_size: Optional[int] = Field(None, description="Chunk size in characters")
+    chunk_id: int | None = Field(None, description="Chunk ID")
+    chunk_size: int | None = Field(None, description="Chunk size in characters")
 
 
 class QueryResponse(BaseModel):
     """Response model for query endpoint."""
 
     answer: str = Field(..., description="Generated answer")
-    sources: Optional[List[SourceDocument]] = Field(
+    sources: list[SourceDocument] | None = Field(
         None,
         description="Source documents used for the answer",
     )
@@ -96,7 +95,7 @@ class StatsResponse(BaseModel):
 class IngestRequest(BaseModel):
     """Request model for ingest endpoint."""
 
-    file_path: Optional[str] = Field(None, description="Specific file to ingest")
+    file_path: str | None = Field(None, description="Specific file to ingest")
     reset: bool = Field(False, description="Reset vector store before ingesting")
 
 
@@ -151,12 +150,12 @@ async def get_stats():
     try:
         stats = pipeline.get_stats()
         return StatsResponse(
-            documents_in_store=stats['documents_in_store'],
-            source_files=stats['source_files'],
+            documents_in_store=stats["documents_in_store"],
+            source_files=stats["source_files"],
         )
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}") from e
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -181,7 +180,7 @@ async def query(request: QueryRequest):
                     chunk_id=doc.metadata.get("chunk_id"),
                     chunk_size=doc.metadata.get("chunk_size"),
                 )
-                for doc in sources[:request.max_sources]
+                for doc in sources[: request.max_sources]
             ]
 
             return QueryResponse(
@@ -199,7 +198,7 @@ async def query(request: QueryRequest):
 
     except Exception as e:
         logger.error(f"Error processing query: {e}")
-        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}") from e
 
 
 @app.post("/query/stream")
@@ -220,7 +219,7 @@ async def query_stream(request: QueryRequest):
 
 
 @app.post("/ingest", response_model=IngestResponse)
-async def ingest_documents(request: IngestRequest, background_tasks: BackgroundTasks):
+async def ingest_documents(request: IngestRequest):
     """Ingest documents into the vector store."""
     if pipeline is None:
         raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
@@ -247,7 +246,7 @@ async def ingest_documents(request: IngestRequest, background_tasks: BackgroundT
 
     except Exception as e:
         logger.error(f"Error ingesting documents: {e}")
-        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}") from e
 
 
 @app.delete("/vector-store")
@@ -261,7 +260,7 @@ async def reset_vector_store():
         return {"message": "Vector store reset successfully"}
     except Exception as e:
         logger.error(f"Error resetting vector store: {e}")
-        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}") from e
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """Configuration management for the RAG application."""
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -83,7 +82,7 @@ class Settings(BaseSettings):
         ge=0.0,
         le=2.0,
     )
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         default=1000,
         description="Maximum tokens for generation",
         ge=1,

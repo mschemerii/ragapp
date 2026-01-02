@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
@@ -20,7 +19,7 @@ class VectorStore:
         store_path: Path,
         collection_name: str,
         embedding_model: str = "text-embedding-3-small",
-        openai_api_key: Optional[str] = None,
+        openai_api_key: str | None = None,
     ) -> None:
         """Initialize the vector store.
 
@@ -40,7 +39,7 @@ class VectorStore:
         )
 
         # Initialize or load vector store
-        self.vector_store: Optional[Chroma] = None
+        self.vector_store: Chroma | None = None
 
     def create_or_load(self) -> Chroma:
         """Create a new vector store or load existing one.
@@ -63,7 +62,7 @@ class VectorStore:
 
     def add_documents(
         self,
-        documents: List[Document],
+        documents: list[Document],
         batch_size: int = 100,
     ) -> None:
         """Add documents to the vector store.
@@ -95,8 +94,8 @@ class VectorStore:
         self,
         query: str,
         k: int = 5,
-        score_threshold: Optional[float] = None,
-    ) -> List[Document]:
+        score_threshold: float | None = None,
+    ) -> list[Document]:
         """Search for similar documents.
 
         Args:
@@ -117,9 +116,7 @@ class VectorStore:
                     query, k=k
                 )
                 # Filter by threshold
-                filtered_results = [
-                    doc for doc, score in results if score >= score_threshold
-                ]
+                filtered_results = [doc for doc, score in results if score >= score_threshold]
                 logger.info(
                     f"Found {len(filtered_results)} documents above threshold {score_threshold}"
                 )

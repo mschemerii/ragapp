@@ -3,8 +3,9 @@
 Run with: streamlit run streamlit_app.py
 """
 
-import streamlit as st
 from pathlib import Path
+
+import streamlit as st
 
 from ragapp import RAGPipeline
 
@@ -17,7 +18,8 @@ st.set_page_config(
 )
 
 # Custom CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -37,7 +39,9 @@ st.markdown("""
         margin: 0.5rem 0;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 @st.cache_resource
@@ -67,9 +71,9 @@ with st.sidebar:
         stats = pipeline.get_stats()
 
         st.markdown('<div class="stats-card">', unsafe_allow_html=True)
-        st.metric("Documents in Vector Store", stats['documents_in_store'])
-        st.metric("Source Files", stats['source_files'])
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.metric("Documents in Vector Store", stats["documents_in_store"])
+        st.metric("Source Files", stats["source_files"])
+        st.markdown("</div>", unsafe_allow_html=True)
     except Exception as e:
         st.warning(f"Could not load stats: {e}")
 
@@ -143,8 +147,7 @@ with col2:
 
 # Process query
 if submit_button and question:
-
-    if stats['documents_in_store'] == 0:
+    if stats["documents_in_store"] == 0:
         st.warning("⚠️ No documents in the vector store. Please ingest documents first.")
         st.info("Run: `python -m ragapp ingest --reset`")
     else:
@@ -189,8 +192,8 @@ if submit_button and question:
                 st.markdown(f"*Answer based on {len(sources)} source(s)*")
 
                 for i, doc in enumerate(sources, 1):
-                    source_file = doc.metadata.get('source', 'Unknown')
-                    chunk_id = doc.metadata.get('chunk_id', 'N/A')
+                    source_file = doc.metadata.get("source", "Unknown")
+                    chunk_id = doc.metadata.get("chunk_id", "N/A")
 
                     with st.expander(f"📌 Source {i}: {Path(source_file).name}"):
                         st.markdown(f"**File:** `{source_file}`")
@@ -205,9 +208,12 @@ if submit_button and question:
 
 # Footer
 st.divider()
-st.markdown("""
+st.markdown(
+    """
 <div style='text-align: center; color: #666; padding: 2rem;'>
     <p>Built with ❤️ using Streamlit and RAGApp</p>
     <p>Run <code>python -m ragapp --help</code> for CLI options</p>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)

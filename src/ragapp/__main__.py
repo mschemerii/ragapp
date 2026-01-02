@@ -136,7 +136,7 @@ def cmd_interactive(args: argparse.Namespace) -> int:
         pipeline = RAGPipeline()
         stats = pipeline.get_stats()
 
-        print(f"\n=== RAG Application Interactive Mode ===")
+        print("\n=== RAG Application Interactive Mode ===")
         print(f"Vector store contains {stats['documents_in_store']} document chunks")
         print("Type 'quit' or 'exit' to leave\n")
 
@@ -198,21 +198,13 @@ def main() -> int:
     # Query command
     query_parser = subparsers.add_parser("query", help="Query the RAG system")
     query_parser.add_argument("question", help="Question to ask")
-    query_parser.add_argument(
-        "--stream", "-s", action="store_true", help="Stream the response"
-    )
-    query_parser.add_argument(
-        "--show-sources", action="store_true", help="Show source documents"
-    )
-    query_parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Show verbose output"
-    )
+    query_parser.add_argument("--stream", "-s", action="store_true", help="Stream the response")
+    query_parser.add_argument("--show-sources", action="store_true", help="Show source documents")
+    query_parser.add_argument("--verbose", "-v", action="store_true", help="Show verbose output")
     query_parser.set_defaults(func=cmd_query)
 
     # Interactive command
-    interactive_parser = subparsers.add_parser(
-        "interactive", help="Start interactive query mode"
-    )
+    interactive_parser = subparsers.add_parser("interactive", help="Start interactive query mode")
     interactive_parser.set_defaults(func=cmd_interactive)
 
     # Stats command

@@ -61,7 +61,7 @@ answer, sources = pipeline.query(question, return_sources=True)
 
 print(f"\nQuestion: {question}")
 print(f"\nAnswer:\n{answer}")
-print(f"\n--- Source Analysis ---")
+print("\n--- Source Analysis ---")
 print(f"Number of sources: {len(sources)}")
 
 for idx, doc in enumerate(sources, 1):

@@ -1,7 +1,6 @@
 """Retrieval utilities for finding relevant documents."""
 
 import logging
-from typing import List
 
 from langchain_core.documents import Document
 
@@ -30,7 +29,7 @@ class DocumentRetriever:
         self.max_results = max_results
         self.similarity_threshold = similarity_threshold
 
-    def retrieve(self, query: str, k: int | None = None) -> List[Document]:
+    def retrieve(self, query: str, k: int | None = None) -> list[Document]:
         """Retrieve relevant documents for a query.
 
         Args:
@@ -57,7 +56,7 @@ class DocumentRetriever:
         self,
         query: str,
         k: int | None = None,
-    ) -> List[tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Retrieve documents with similarity scores.
 
         Args:
@@ -86,7 +85,7 @@ class DocumentRetriever:
         )
         return filtered_results
 
-    def format_context(self, documents: List[Document]) -> str:
+    def format_context(self, documents: list[Document]) -> str:
         """Format retrieved documents into a context string.
 
         Args:
