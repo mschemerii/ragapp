@@ -3,10 +3,10 @@
 import logging
 from typing import Literal
 
-from langchain_community.llms import Ollama
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
 from langchain_core.messages import BaseMessage
+from langchain_ollama import OllamaLLM
 from langchain_openai import ChatOpenAI
 
 from ragapp.generation.prompts import CONVERSATIONAL_RAG_PROMPT, RAG_CHAT_PROMPT
@@ -55,7 +55,7 @@ class ResponseGenerator:
         elif provider == "ollama":
             if not model:
                 model = "llama3.2"
-            self.llm = Ollama(
+            self.llm = OllamaLLM(
                 model=model,
                 temperature=temperature,
                 base_url=ollama_base_url,

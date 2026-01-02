@@ -1,6 +1,6 @@
 """Prompt templates for RAG generation."""
 
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
 # System prompt for RAG
 RAG_SYSTEM_PROMPT = """You are a helpful AI assistant that answers questions based on the provided context.
