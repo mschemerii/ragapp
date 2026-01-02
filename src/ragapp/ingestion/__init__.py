@@ -1,3 +1,6 @@
 """Document ingestion module for processing and loading documents."""
 
-__all__ = []
+from ragapp.ingestion.loaders import DocumentLoader
+from ragapp.ingestion.processor import DocumentProcessor
+
+__all__ = ["DocumentLoader", "DocumentProcessor"]

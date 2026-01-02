@@ -8,10 +8,16 @@ This application combines document retrieval with large language models to provi
 
 ## Features
 
-- Document ingestion and processing
-- Vector storage for semantic search
-- Context-aware question answering
-- Support for multiple document formats
+- **Multi-format Support**: PDF, TXT, DOCX, Markdown
+- **Semantic Search**: Vector-based similarity search using ChromaDB
+- **Configurable Chunking**: Customizable chunk sizes and overlap
+- **Streaming Responses**: Real-time answer generation
+- **CLI & API**: Both command-line and programmatic interfaces
+- **Source Attribution**: Track which documents answers come from
+- **Interactive Mode**: Conversational query interface
+- **Type-Safe**: Full type hints with mypy checking
+- **Well-Tested**: Comprehensive test suite with pytest
+- **CI/CD Ready**: GitHub Actions workflows included
 
 ## Prerequisites
 
@@ -56,35 +62,119 @@ VECTOR_STORE_PATH=./data/vectorstore
 DOCUMENTS_PATH=./data/documents
 ```
 
+## Quick Start
+
+1. **Add your documents** to the `data/documents/` directory (supports .txt, .pdf, .docx, .md)
+
+2. **Ingest documents** into the vector store:
+   ```bash
+   python -m ragapp ingest --reset
+   ```
+
+3. **Query your documents**:
+   ```bash
+   python -m ragapp query "What is RAG?"
+   ```
+
 ## Usage
 
+### CLI Commands
+
+#### Ingest Documents
 ```bash
-# Run the application
-python -m ragapp
+# Ingest all documents from data/documents/
+python -m ragapp ingest
 
-# Or with uv
-uv run python -m ragapp
+# Ingest a specific file
+python -m ragapp ingest --file path/to/document.pdf
+
+# Reset vector store and ingest
+python -m ragapp ingest --reset
 ```
 
-## Project Structure
+#### Query
+```bash
+# Ask a question
+python -m ragapp query "What is this about?"
+
+# Stream the response
+python -m ragapp query "Explain the main concepts" --stream
+
+# Show source documents
+python -m ragapp query "What is RAG?" --show-sources
+```
+
+#### Interactive Mode
+```bash
+# Start an interactive session
+python -m ragapp interactive
+```
+
+#### Statistics
+```bash
+# View system statistics
+python -m ragapp stats
+```
+
+### Programmatic Usage
+
+```python
+from ragapp import RAGPipeline
+
+# Initialize pipeline
+pipeline = RAGPipeline()
+
+# Ingest documents
+count = pipeline.ingest_documents()
+print(f"Ingested {count} chunks")
+
+# Query
+answer = pipeline.query("What is RAG?")
+print(answer)
+
+# Query with sources
+answer, sources = pipeline.query("What is RAG?", return_sources=True)
+print(f"Answer: {answer}")
+print(f"Based on {len(sources)} sources")
+
+# Stream response
+for chunk in pipeline.stream_query("Explain vector embeddings"):
+    print(chunk, end="", flush=True)
+```
+
+See [examples/](examples/) for more detailed usage examples.
+
+## Architecture
+
+This RAG application follows a modular architecture:
 
 ```
-ragapp/
-├── src/
-│   └── ragapp/          # Main application package
-│       ├── __init__.py
-│       ├── ingestion/   # Document ingestion
-│       ├── retrieval/   # Vector search and retrieval
-│       └── generation/  # LLM-based generation
-├── data/                # Data storage
-│   ├── documents/       # Source documents
-│   └── vectorstore/     # Vector embeddings
-├── tests/               # Test suite
-├── .env.example         # Environment variables template
-├── .gitignore
-├── pyproject.toml
-└── README.md
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│  Ingestion  │─────▶│  Retrieval  │─────▶│ Generation  │
+│   Pipeline  │      │   System    │      │   Engine    │
+└─────────────┘      └─────────────┘      └─────────────┘
+      │                     │                     │
+      ▼                     ▼                     ▼
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│  Documents  │      │   Vector    │      │   OpenAI    │
+│   Loaders   │      │    Store    │      │     LLM     │
+└─────────────┘      └─────────────┘      └─────────────┘
 ```
+
+**Components**:
+- `config.py`: Centralized configuration with Pydantic
+- `ingestion/`: Document loading and chunking
+- `retrieval/`: Vector storage and semantic search
+- `generation/`: LLM-based response generation
+- `pipeline.py`: Orchestrates the entire RAG flow
+
+For detailed architecture information, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Documentation
+
+- [Architecture Guide](docs/ARCHITECTURE.md) - System design and components
+- [API Reference](docs/API.md) - Complete API documentation
+- [Examples](examples/) - Usage examples and code samples
 
 ## Development
 
