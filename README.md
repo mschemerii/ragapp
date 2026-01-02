@@ -24,7 +24,35 @@ This application combines document retrieval with large language models to provi
 - Python 3.10 or higher
 - pip or uv package manager
 
-## Installation
+## Download Pre-Built macOS Application
+
+**For macOS users**: You can download a ready-to-use application without installing Python!
+
+### Option 1: Download from Releases (Recommended)
+
+1. Go to the [Releases page](../../releases)
+2. Download the latest `RAG-Application-macOS.dmg` or `RAG-Application-macOS.zip`
+3. **DMG**: Open the DMG and drag the app to Applications
+4. **ZIP**: Extract and move the app to Applications
+5. **First launch**: Right-click the app → "Open" (macOS security)
+6. The Streamlit web interface will open in your browser automatically
+
+### Option 2: Build Locally
+
+```bash
+# Install build dependencies
+pip install -e ".[build,all]"
+
+# Build the application
+./build_macos.sh
+
+# The app will be in: dist/RAG Application.app
+open "dist/RAG Application.app"
+```
+
+**Note**: The macOS app includes the Streamlit web interface. For CLI or API server, use Python installation below.
+
+## Installation (Python)
 
 ### Using uv (recommended)
 
