@@ -180,6 +180,25 @@ Usage:
 
 ## Troubleshooting
 
+### App Won't Close / Processes Keep Running
+
+**Fixed in latest version!** If you're experiencing issues with processes not terminating when closing the app, update to the latest version.
+
+**For complete troubleshooting guide**: See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+Quick fix:
+```bash
+# Kill lingering processes
+pkill -9 streamlit
+pkill -9 -f "RAG Application"
+```
+
+**The fix includes**:
+- Proper signal handling (SIGTERM, SIGINT)
+- Process group management to track child processes
+- `atexit` handler for cleanup on unexpected exits
+- Graceful shutdown with fallback to force kill
+
 ### "Application is damaged and can't be opened"
 
 This happens because the app isn't signed with an Apple Developer certificate.
@@ -203,9 +222,15 @@ If the app crashes on launch:
 Example:
 ```python
 hiddenimports=[
-    'missing_package',  # Add here
+    'langchain_ollama',  # For Ollama support
+    'langchain_text_splitters',  # For document chunking
 ]
 ```
+
+**Recent additions**:
+- `langchain_ollama` - Local LLM support
+- `langchain_text_splitters` - Document processing
+- `ollama` - Ollama Python client
 
 ### Large App Size
 
