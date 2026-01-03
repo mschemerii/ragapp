@@ -4,10 +4,10 @@ import logging
 from pathlib import Path
 from typing import Literal
 
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_openai import OpenAIEmbeddings
 
 logger = logging.getLogger(__name__)
